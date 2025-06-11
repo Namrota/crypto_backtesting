@@ -50,7 +50,7 @@ class BinanceClient:
             return None
         
 
-    def _get_symbols(self):
+    def _get_symbols(self)-> List[str]:
         """
         Retrieves and prints exchange symbol information from Binance.
         Depending on whether the instance is set for futures or spot trading,
@@ -66,4 +66,7 @@ class BinanceClient:
         params= dict()
         endpoint= "/fapi/v1/exchangeInfo" if self.futures else "/api/v3/exchangeInfo"
         data= self._make_requests(endpoint, params)
-        print(data)
+
+        symbols= [x["symbol"] for x in data["symbols"]]
+        print(symbols)
+        return symbols
