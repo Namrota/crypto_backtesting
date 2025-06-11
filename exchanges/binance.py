@@ -70,3 +70,64 @@ class BinanceClient:
         symbols= [x["symbol"] for x in data["symbols"]]
         print(symbols)
         return symbols
+
+    def get_historical_data(self, symbol: str, start_time: Optional[int]= None, end_time: Optional[int]= None):
+            """
+            Fetches historical candlestick (kline) data for a given symbol from Binance, supporting both spot and futures markets.
+            Args:
+                symbol (str): The trading pair symbol (e.g., 'BTCUSDT').
+                start_time (Optional[int], optional): The start time in milliseconds since epoch. Defaults to None.
+                end_time (Optional[int], optional): The end time in milliseconds since epoch. Defaults to None.
+                interval (str, optional): The interval for the candlestick data (e.g., '1m', '5m', '1h'). Defaults
+                to '1m'.
+                limit (int, optional): The maximum number of candlesticks to retrieve. Defaults to 500, max: 1500
+            Returns:
+                list: A list of candlestick data, where each entry contains:
+                    [
+                        open_time,      # int: Kline open time (ms)
+                        open,           # str: Open price
+                        high,           # str: High price
+                        low,            # str: Low price
+                        close,          # str: Close price
+                        volume,         # str: Volume
+                        close_time,     # int: Kline close time (ms)
+                        quote_asset_volume, # str: Quote asset volume
+                        number_of_trades,   # int: Number of trades
+                        taker_buy_base_asset_volume,  # str: Taker buy base asset volume
+                        taker_buy_quote_asset_volume, # str: Taker buy quote asset volume
+                        ignore           # str: Ignore field
+                    ]
+            Raises:
+                ValueError: If the symbol is invalid or required parameters are missing.
+                requests.HTTPError: If the Binance API request fails.
+            References:
+                - Binance Spot API: https://binance-docs.github.io/apidocs/spot/en/#kline-candlestick-data
+                - Binance Futures API: https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Kline-Candlestick-Data
+            """
+
+            params= dict()
+
+            params["symbol"]= symbol
+            params["interval"]= "1m"
+            params["limit"]= 1500
+
+            if start_time is not None:
+                params["startTime"]= start_time
+            if end_time is not None:
+                params["endTime"]= end_time
+    
+            endpoint= "/fapi/v1/klines" if self.futures else "/api/v3/klines"
+            raw_candles= self._make_requests(endpoint, params)
+            candles=[]
+            if raw_candles is None:
+                raise ValueError(f"Failed to fetch historical data for {symbol}")
+            for c in raw_candles:
+                candles.append({
+                    "open_time": c[0],
+                    "open": float(c[1]),
+                    "high": float(c[2]),
+                    "low": float(c[3]),
+                    "close": float(c[4]),
+                    "volume": float(c[5])
+                })
+            return candles
