@@ -1,8 +1,8 @@
 from typing import *
 import requests
 import logging
-
-from datetime import datetime, timedelta
+import pytz
+from datetime import datetime, timedelta, timezone
 
 # Set up logging
 logger= logging.getLogger()
@@ -72,34 +72,56 @@ class CoinbaseClient:
         return symbols
 
     def get_historical_data(self, symbol: str, start_time: Optional[int]= None, end_time: Optional[int]= None):
+        """
+        Fetches historical candlestick (OHLCV) data for a given trading symbol from Coinbase.
+        Parameters:
+            symbol (str): The trading pair symbol (e.g., 'BTC-USD').
+            start_time (Optional[int]): The start time for fetching data as a Unix timestamp (seconds). If not provided, defaults to the latest available data.
+            end_time (Optional[int]): The end time for fetching data as a Unix timestamp (seconds). If not provided, defaults to the current time.
+        Returns:
+            List[dict]: A list of candlestick data, where each entry contains:
+                - 'open_time': Start time of the candle in milliseconds since epoch.
+                - 'low': Lowest price during the interval.
+                - 'high': Highest price during the interval.
+                - 'open': Opening price at the start of the interval.
+                - 'close': Closing price at the end of the interval.
+                - 'volume': Volume traded during the interval.
+        Raises:
+            ValueError: If historical data could not be fetched for the given symbol.
+        Notes:
+            - The data granularity is fixed at 60 seconds (1 minute).
+            - A maximum of 300 candles can be fetched per request.
+            - If start_time and end_time are not provided, the latest 300 candles are returned.
+        """
            
 
-            params= dict()
+        params= dict()
 
-            params["granularity"]= "60" # 60 seconds granularity
-            # maximum number of  requests is 300 candles per request
-            params["limit"]= 300
-            # if the start and end fields are not provided, both fields are ignored.
-            delta= timedelta(seconds= 60) # 60 seconds
-            if start_time is not None:
-                start_time= end_time - (300 * delta)
-                params["start"]= start_time.isoformat()
-            if end_time is not None:
-                end_time= datetime.now()
-                params["end"]= end_time.isoformat()
+        params["granularity"]= "60" # 60 seconds granularity
+        # maximum number of  requests is 300 candles per request
+        params["limit"]= 300
+        # if the start and end fields are not provided, both fields are ignored.
+        delta= timedelta(seconds= 60) # 60 seconds
+        if start_time is not None:
+            start_time= end_time - (300 * delta)
+            params["start"]= start_time.isoformat()
+        if end_time is not None:
+            end_time= datetime.now(pytz.utc) if end_time is None else datetime.fromtimestamp(end_time, tz=timezone.utc)
+            #print(f"End time: {end_time}")
+            params["end"]= end_time.isoformat()
     
-            endpoint= f"/products/{symbol}/candles" # Coinbase API endpoint for historical candles
-            raw_candles= self._make_requests(endpoint, params)
-            candles=[]
-            if raw_candles is None:
-                raise ValueError(f"Failed to fetch historical data for {symbol}")
-            for c in raw_candles:
-                candles.append({
-                    "open_time": c[0] * 1000,       # bucket start time in milliseconds since epoch (Unix time in ms)
-                    "low": c[1],      # lowesr price during the bucket interval
-                    "high": c[2],     # highest price during the bucket interval
-                    "open": c[3],     # opening price at the start of the bucket interval
-                    "close": c[4],    # closing price at the end of the bucket interval
-                    "volume": c[5]    # volume of the asset traded during the bucket interval
-                })
-            return candles
+        endpoint= f"/products/{symbol}/candles" # Coinbase API endpoint for historical candles
+        raw_candles= self._make_requests(endpoint, params)
+        candles=[]
+        if raw_candles is None:
+            raise ValueError(f"Failed to fetch historical data for {symbol}")
+        for c in raw_candles:
+            candles.append({
+                "open_time": c[0] * 1000,       # bucket start time in milliseconds since epoch (Unix time in ms)
+                "low": c[1],      # lowesr price during the bucket interval
+                "high": c[2],     # highest price during the bucket interval
+                "open": c[3],     # opening price at the start of the bucket interval
+                "close": c[4],    # closing price at the end of the bucket interval
+                "volume": c[5]    # volume of the asset traded during the bucket interval
+            })
+        return candles
