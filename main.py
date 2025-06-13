@@ -22,6 +22,7 @@ Example:
 """
 import logging
 from exchanges.binance import BinanceClient
+from exchanges.coinbase import CoinbaseClient
 
 root_logger= logging.getLogger()
 root_logger.setLevel(logging.DEBUG)
@@ -45,5 +46,18 @@ root_logger.addHandler(file_handler)
 
 if __name__== "__main__":
     mode= input("Choose the program mode (data / backtest / optimize): ").lower()
-    client= BinanceClient(True)
-    print(client.get_historical_data("BTCUSDT"))
+    while True:
+        exchange= input("Choose the exchange (binance / coinbase): ").lower()
+        if exchange== "binance":
+            client= BinanceClient()
+            print(client.get_historical_data("BTCUSDT"))
+        elif exchange== "coinbase":
+            client= CoinbaseClient()
+            print(client.get_historical_data("BTC-USDT"))
+        else:
+            raise ValueError("Invalid exchange selected. Choose 'binance' or 'coinbase'.")
+        break
+        
+    #client= BinanceClient(True)
+    #client= CoinbaseClient()
+    #print(client.get_historical_data("BTCUSDT"))
