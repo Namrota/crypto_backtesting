@@ -1,6 +1,9 @@
 from typing import *
 import numpy as np
 import h5py
+import logging
+
+logger= logging.getLogger()
 
 class Hdf5Client:
     """"
@@ -32,8 +35,28 @@ class Hdf5Client:
         None
     """
     def write_data(self, symbol:str, data: List[Tuple]):
+
+        # stores timestamp in min_ts and max_ts for a symbol
+        min_ts, max_ts= self.get_first_last_timestamp(symbol)
+
+        filtered_data= []
+
+        # if min_ts is None then set min_ts as inf and max_ts as 0
+        if min_ts is None:
+            min_ts= float("inf")
+            max_ts= 0
+
+        for d in data:
+            if d[0] < min_ts:
+                filtered_data.append(d)
+            elif d[0] > max_ts:
+                filtered_data.append(d)
+        
+        if len(filtered_data)== 0:
+            logger.warning(f"No data to insert for {symbol}")
+            return
         # HDF5 daatasets expect data in array-like format, so we convert the list of tuples to a numpy array.
-        data_arr= np.array(data)
+        data_arr= np.array(filtered_data)
         # self.hf[symbol]: is the dataset (like a table) for the specified symbol.
         # .shape[0] is the number of existing rows.
         # data_arr.shape[0]: number of new rows to be added.
@@ -42,4 +65,22 @@ class Hdf5Client:
         self.hf[symbol].resize(self.hf[symbol].shape[0] + data_arr.shape[0], axis= 0)
         self.hf[symbol][-data_arr.shape[0]:] = data_arr
         self.hf.flush()
+    
+    """
+    Retrieves the first and last timestamps from the dataset for the specified trading symbol.
+            symbol (str): The trading symbol whose dataset is being queried.
+            Tuple[None, None]: If the dataset is empty, returns (None, None).
+            Tuple[float, float]: If data exists, returns a tuple containing the earliest and latest timestamps (as floats).
+    """
+    def get_first_last_timestamp(self, symbol: str)-> Union[Tuple[None, None], Tuple[float, float]]:
+        existing_data= self.hf[symbol][:]
+
+        if len(existing_data) == 0:
+            return None, None
+        # first_ts and last_ts looks for the min and max timestamp
+        first_ts= min(existing_data, key= lambda x: x[0])[0]
+        last_ts= max(existing_data, key= lambda x: x[0])[0]
+
+        return first_ts, last_ts
+
     
