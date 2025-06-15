@@ -23,7 +23,9 @@ Example:
 import logging
 from exchanges.binance import BinanceClient
 from exchanges.coinbase import CoinbaseClient
+from data_collector import collect_all
 
+# Set up logging
 root_logger= logging.getLogger()
 root_logger.setLevel(logging.DEBUG)
 
@@ -48,16 +50,23 @@ if __name__== "__main__":
     mode= input("Choose the program mode (data / backtest / optimize): ").lower()
     while True:
         exchange= input("Choose the exchange (binance / coinbase): ").lower()
-        if exchange== "binance":
-            client= BinanceClient()
-            print(client.get_historical_data("BTCUSDT"))
-        elif exchange== "coinbase":
-            client= CoinbaseClient()
-            print(client.get_historical_data("BTC-USDT"))
-        else:
-            raise ValueError("Invalid exchange selected. Choose 'binance' or 'coinbase'.")
-        break
-        
-    #client= BinanceClient(True)
-    #client= CoinbaseClient()
-    #print(client.get_historical_data("BTCUSDT"))
+        if exchange in ["binance", "coinbase"]:
+            break
+            
+            
+
+    if exchange== "binance":
+        client= BinanceClient()
+        #print(client.get_historical_data("BTCUSDT"))
+    elif exchange== "coinbase":
+        client= CoinbaseClient()
+        #print(client.get_historical_data("BTC-USDT"))
+
+    while True:
+        symbol= input("Enter the trading symbol (e.g., BTCUSDT for Binance, BTC-USDT for Coinbase): ").upper()
+        if symbol in client.symbols:
+            break
+    
+    if mode== "data":
+        collect_all(client, exchange, symbol)
+    
