@@ -14,7 +14,10 @@ def collect_all(client: Union[BinanceClient, CoinbaseClient], exchange: str, sym
     # This function collects historical data for a given trading symbol from the specified exchange.
     h5_db= Hdf5Client(exchange)
     h5_db.create_dataset(symbol)  # Create a dataset for the symbol if it doesn't exist
+
+   
     oldest_ts, most_recent_ts= h5_db.get_first_last_timestamp(symbol)
+
     print(oldest_ts, most_recent_ts)
     #Case 1: initial request to get the historical data
 
@@ -43,7 +46,8 @@ def collect_all(client: Union[BinanceClient, CoinbaseClient], exchange: str, sym
     The loop continues until no more new data is available or the most recent timestamp is updated.
     It also includes a sleep of 1.1 seconds to avoid hitting the rate limit of the exchange API.
     '''
-
+    # rather can writing to the database immediately, we collect all the data first and then write it to the database in one go
+    data_to_insert= []
     while True:
         data= client.get_historical_data(symbol, start_time= int(most_recent_ts + 60000)) # 60 seconds before the current time
 
@@ -56,15 +60,23 @@ def collect_all(client: Union[BinanceClient, CoinbaseClient], exchange: str, sym
             break
 
         data= data[:-1] # Remove the last element because the current candlstick might not be finished yet
+        
+        data_to_insert= data_to_insert + data
+        
+        if len(data_to_insert) > 10000:
+            h5_db.write_data(symbol, [(d['open_time'], d['low'], d['high'], d['open'], d['close'], d['volume']) for d in data_to_insert])
+            data_to_insert= []  # Reset the list after writing to the database
         #if exchange== "coinbase":
         #    data= list(reversed(data))
         if data[-1]['open_time'] > most_recent_ts:
             most_recent_ts= data[-1]['open_time']
         logger.info(f"Collected new data of {len(data)} for {symbol} on {exchange} from {ms_to_datetime(data[0]['open_time'])} to {ms_to_datetime(data[-1]['open_time'])}.")
-        
-        h5_db.write_data(symbol, [(d['open_time'], d['low'], d['high'], d['open'], d['close'], d['volume']) for d in data])
         time.sleep(1.1) # Pause for 1.1 seconds to avoid hitting the rate limit  
 
+    #ensuring that no data is left to insert after the loop
+    if data_to_insert != []:  
+        h5_db.write_data(symbol, [(d['open_time'], d['low'], d['high'], d['open'], d['close'], d['volume']) for d in data_to_insert])
+   
     #Case 3: older data
     '''
     This part of the code collects older data based on the oldest timestamp.
@@ -86,6 +98,12 @@ def collect_all(client: Union[BinanceClient, CoinbaseClient], exchange: str, sym
             logger.info(f"No more historical data found before {ms_to_datetime(oldest_ts)} for {symbol} on {exchange}.")
             break
         
+
+        data_to_insert= data_to_insert + data
+        
+        if len(data_to_insert) > 10000:
+            h5_db.write_data(symbol, [(d['open_time'], d['low'], d['high'], d['open'], d['close'], d['volume']) for d in data_to_insert])
+            data_to_insert= []  # Reset the list after writing to the database
         #if exchange== "coinbase":
         #    data= list(reversed(data))
         
@@ -94,5 +112,8 @@ def collect_all(client: Union[BinanceClient, CoinbaseClient], exchange: str, sym
         
         logger.info(f"Collected older data of {len(data)} for {symbol} on {exchange} from {ms_to_datetime(data[0]['open_time'])} to {ms_to_datetime(data[-1]['open_time'])}.")
         
-        h5_db.write_data(symbol, [(d['open_time'], d['low'], d['high'], d['open'], d['close'], d['volume']) for d in data])
         time.sleep(1.1) # Pause for 1.1 seconds to avoid hitting the rate limit  
+
+    #ensuring that no data is left to insert after the loop
+    if data_to_insert != []:  
+        h5_db.write_data(symbol, [(d['open_time'], d['low'], d['high'], d['open'], d['close'], d['volume']) for d in data_to_insert])
