@@ -62,7 +62,7 @@ def collect_all(client: Union[BinanceClient, CoinbaseClient], exchange: str, sym
             most_recent_ts= data[-1]['open_time']
         logger.info(f"Collected new data of {len(data)} for {symbol} on {exchange} from {ms_to_datetime(data[0]['open_time'])} to {ms_to_datetime(data[-1]['open_time'])}.")
         
-        h5_db.write_data(symbol, data)
+        h5_db.write_data(symbol, [(d['open_time'], d['low'], d['high'], d['open'], d['close'], d['volume']) for d in data])
         time.sleep(1.1) # Pause for 1.1 seconds to avoid hitting the rate limit  
 
     #Case 3: older data
@@ -94,5 +94,5 @@ def collect_all(client: Union[BinanceClient, CoinbaseClient], exchange: str, sym
         
         logger.info(f"Collected older data of {len(data)} for {symbol} on {exchange} from {ms_to_datetime(data[0]['open_time'])} to {ms_to_datetime(data[-1]['open_time'])}.")
         
-        h5_db.write_data(symbol, data)
+        h5_db.write_data(symbol, [(d['open_time'], d['low'], d['high'], d['open'], d['close'], d['volume']) for d in data])
         time.sleep(1.1) # Pause for 1.1 seconds to avoid hitting the rate limit  
