@@ -68,7 +68,7 @@ class BinanceClient:
         data= self._make_requests(endpoint, params)
 
         symbols= [x["symbol"] for x in data["symbols"]]
-        print(symbols)
+        #print(symbols)
         return symbols
 
     def get_historical_data(self, symbol: str, start_time: Optional[int]= None, end_time: Optional[int]= None):
