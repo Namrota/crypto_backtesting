@@ -1,7 +1,10 @@
 from typing import *
 import numpy as np
+import pandas as pd
 import h5py
 import logging
+import time
+
 
 logger= logging.getLogger()
 
@@ -73,6 +76,7 @@ class Hdf5Client:
             Tuple[float, float]: If data exists, returns a tuple containing the earliest and latest timestamps (as floats).
     """
     def get_first_last_timestamp(self, symbol: str)-> Union[Tuple[None, None], Tuple[float, float]]:
+        
         existing_data= self.hf[symbol][:]
 
         if len(existing_data) == 0:
@@ -83,4 +87,33 @@ class Hdf5Client:
 
         return first_ts, last_ts
 
-    
+    """
+    Retrieves trading data for a specific symbol within a given time range.
+    Args:
+        symbol (str): The trading symbol for which data is being retrieved.
+        from_time (int): The start of the time range (timestamp in milliseconds).
+        to_time (int): The end of the time range (timestamp in milliseconds).
+    Returns:
+        Union[None, pd.DataFrame]: Returns a DataFrame containing the trading data for the specified symbol and time range.
+                                    If no data is found, returns None.
+    """
+    def get_data(self, symbol: str, from_time: int, to_time: int)-> Union[None, pd.DataFrame]:
+        
+        start_query= time.time()
+
+        existing_data= self.hf[symbol][:]      
+
+        if len(existing_data)== 0:
+            return None
+        
+        data= sorted(existing_data, key= lambda x: x[0])
+        data= np.array(data)
+
+        df= pd.DataFrame(data, columns=["timestamp", "open", "high", "low", "close", "volume"])
+        df= df[(df["timestamp"] >= from_time) & (df["timestamp"] <= to_time)]
+        df["timestamp"]= pd.to_datetime(df["timestamp"].values.astype(np.int64), unit= "ms")
+        df.set_index("timestamp", drop= True, inplace=False)
+
+        query_time= round((time.time() - start_query),2)
+        logger.info(f"Retrieved {len(df.index)} from {symbol} in {query_time} seconds")
+        return df
