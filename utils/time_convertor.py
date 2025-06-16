@@ -59,4 +59,4 @@ def resample_timeframe(data: pd.DataFrame, timeframe: str) -> pd.DataFrame:
         'low': 'min',
         'close': 'last',
         'volume': 'sum'
-    }).dropna()
+    })
