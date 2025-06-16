@@ -1,4 +1,9 @@
 import datetime
+import pandas as pd
+
+TF_EQUIV={"1m":"1Min", "5m":"5Min", "15m":"15Min", "30m":"30Min", 
+          "1h":"1H", "4h":"4H", "12h":"12H", 
+          "1d":"1D", "1w":"1W"}
 
 def ms_to_datetime(ms: int) -> datetime.datetime:
     """
@@ -28,3 +33,30 @@ def floor_to_minute(dt: datetime.datetime, sec:int) -> datetime.datetime:
     ts= int(dt.timestamp())
     floored_ts= (ts//sec)*sec
     return dt.fromtimestamp(floored_ts, tz=dt.tzinfo)
+
+def resample_timeframe(data: pd.DataFrame, timeframe: str) -> pd.DataFrame:
+    """
+    Resamples a DataFrame to a specified timeframe.
+    
+    Args:
+        data (pd.DataFrame): The DataFrame to resample.
+        timeframe (str): The new timeframe (e.g., '1T' for 1 minute).
+        
+    Returns:
+        pd.DataFrame: The resampled DataFrame.
+        Resamples the data with appropriate aggregation methods for each OHLCV column:
+        open: Takes first value in the period
+        high: Takes maximum value
+        low: Takes minimum value
+        close: Takes last value
+        volume: Sums all values
+    """
+    # aggregate the data to the specified timeframe
+
+    return data.resample(TF_EQUIV[tf]).agg({
+        'open': 'first',
+        'high': 'max',
+        'low': 'min',
+        'close': 'last',
+        'volume': 'sum'
+    }).dropna()
