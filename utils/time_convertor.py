@@ -53,7 +53,7 @@ def resample_timeframe(data: pd.DataFrame, timeframe: str) -> pd.DataFrame:
     """
     # aggregate the data to the specified timeframe
 
-    return data.resample(TF_EQUIV[tf]).agg({
+    return data.resample(TF_EQUIV[timeframe]).agg({
         'open': 'first',
         'high': 'max',
         'low': 'min',
