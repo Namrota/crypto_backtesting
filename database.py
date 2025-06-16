@@ -112,7 +112,7 @@ class Hdf5Client:
         df= pd.DataFrame(data, columns=["timestamp", "open", "high", "low", "close", "volume"])
         df= df[(df["timestamp"] >= from_time) & (df["timestamp"] <= to_time)]
         df["timestamp"]= pd.to_datetime(df["timestamp"].values.astype(np.int64), unit= "ms")
-        df.set_index("timestamp", drop= True, inplace=False)
+        df.set_index("timestamp", drop= True, inplace= True)
 
         query_time= round((time.time() - start_query),2)
         logger.info(f"Retrieved {len(df.index)} from {symbol} in {query_time} seconds")
