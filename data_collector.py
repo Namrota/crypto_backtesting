@@ -15,7 +15,13 @@ def collect_all(client: Union[BinanceClient, CoinbaseClient], exchange: str, sym
     h5_db= Hdf5Client(exchange)
     h5_db.create_dataset(symbol)  # Create a dataset for the symbol if it doesn't exist
 
-   
+    # Resample the existing data to the desired timeframe
+    #data= h5_db.get_data(symbol, from_time=0, to_time=int(time.time() * 1000))  # Get existing data for the symbol
+    #data= resample_timeframe(data, "15m")  # Resample the data to the desired timeframe
+    #print(data)
+    #return
+    
+    # Get the first and last timestamps from the database for the symbol
     oldest_ts, most_recent_ts= h5_db.get_first_last_timestamp(symbol)
 
     print(oldest_ts, most_recent_ts)
