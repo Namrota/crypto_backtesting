@@ -3,6 +3,7 @@ import requests
 import logging
 import pytz
 from datetime import datetime, timedelta, timezone
+from utils.time_convertor import *
 
 # Set up logging
 logger= logging.getLogger()
@@ -72,6 +73,7 @@ class CoinbaseClient:
         return symbols
 
     def get_historical_data(self, symbol: str, start_time: Optional[int]= None, end_time: Optional[int]= None):
+        
         """
         Fetches historical candlestick (OHLCV) data for a given trading symbol from Coinbase.
         Parameters:
@@ -93,23 +95,32 @@ class CoinbaseClient:
             - A maximum of 300 candles can be fetched per request.
             - If start_time and end_time are not provided, the latest 300 candles are returned.
         """
+        params= dict()
+        params["granularity"]= "60" # 60 seconds granularity
+        max_candles= 300 # maximum number of candles to fetch
+        result= []
+
+        if end_time is not None:
+            end_time_dt = ms_to_datetime(end_time)
+           
+        else:
+            end_time_dt = datetime.datetime.now(timezone.utc)
            
 
-        params= dict()
-
-        params["granularity"]= "60" # 60 seconds granularity
-        # maximum number of  requests is 300 candles per request
-        params["limit"]= 300
-        # if the start and end fields are not provided, both fields are ignored.
-        delta= timedelta(seconds= 60) # 60 seconds
         if start_time is not None:
-            start_time= end_time - (300 * delta)
-            params["start"]= start_time.isoformat()
-        if end_time is not None:
-            end_time= datetime.now(pytz.utc) if end_time is None else datetime.fromtimestamp(end_time, tz=timezone.utc)
-            #print(f"End time: {end_time}")
-            params["end"]= end_time.isoformat()
-    
+            start_time_dt= ms_to_datetime(start_time)
+            # If start_time is provided, we use it directly
+            if (end_time_dt - start_time_dt) > timedelta(minutes= max_candles):
+                start_time_dt = end_time_dt - timedelta(minutes= max_candles)
+            
+        else:
+            # If start_time is provided, we calculate it as 300 minutes before the end_time
+            start_time_dt = end_time_dt - timedelta(minutes= max_candles)
+        
+        
+        params["start"]= start_time_dt.isoformat()
+        params["end"]= end_time_dt.isoformat()
+
         endpoint= f"/products/{symbol}/candles" # Coinbase API endpoint for historical candles
         raw_candles= self._make_requests(endpoint, params)
         candles=[]
@@ -118,10 +129,11 @@ class CoinbaseClient:
         for c in raw_candles:
             candles.append({
                 "open_time": c[0] * 1000,       # bucket start time in milliseconds since epoch (Unix time in ms)
-                "low": c[1],      # lowesr price during the bucket interval
+                "low": c[1],      # lowest price during the bucket interval
                 "high": c[2],     # highest price during the bucket interval
                 "open": c[3],     # opening price at the start of the bucket interval
                 "close": c[4],    # closing price at the end of the bucket interval
                 "volume": c[5]    # volume of the asset traded during the bucket interval
             })
-        return candles
+        # Sort the candles by open_time to ensure ascending order
+        return sorted(candles, key= lambda x: x["open_time"])
