@@ -1,0 +1,8 @@
+#Ignore loggers and HDF5 files created by the script
+*.log
+*.h5
+*.json
+
+# Ignore Python cache files
+__pycache__/
+
