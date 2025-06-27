@@ -77,10 +77,10 @@ if __name__== "__main__":
     
     elif mode== "backtest":
         #strategy
-        available_startegies= ["obv"]
+        available_strategies= ["obv", "ichimoku", "sup_res"]
         while True:
-            strategy= input(f"Choose a strategy: ({', '.join(available_startegies)}) ").lower()
-            if strategy in available_startegies:
+            strategy= input(f"Choose a strategy- ({', '.join(available_strategies)}): ").lower()
+            if strategy in available_strategies:
                 break
                 
         #timeframe
