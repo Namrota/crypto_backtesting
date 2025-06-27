@@ -2,6 +2,7 @@ from database import Hdf5Client
 from utils.time_convertor import *
 
 import strategies.obv
+import strategies.ichimoku
 
 def run(exchange:str, symbol:str, strategy:str, tf:str, from_time:int, to_time:int):
     """
@@ -24,3 +25,11 @@ def run(exchange:str, symbol:str, strategy:str, tf:str, from_time:int, to_time:i
    
 
         print(strategies.obv.backtest(data, 9))
+    
+    elif strategy== "ichimoku":
+        h5_db = Hdf5Client(exchange)
+        data= h5_db.get_data(symbol, from_time=from_time, to_time=to_time)
+        # Resample the data to the specified timeframe
+        data= resample_timeframe(data, tf)
+        #strategies.ichimoku.backtest(data, 9, 26)
+        print(strategies.ichimoku.backtest(data, tenkan_period= 9, kijun_period= 26))
