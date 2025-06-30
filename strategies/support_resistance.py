@@ -53,5 +53,20 @@ def backtest(df: pd.DataFrame, min_points: int, min_diff_points:int, rounding_nb
                     grp["last"]= index
             else:
                 price_groups[side][row["rounded_" + h_l]]= {"prices": [row[h_l]], "start_time": index, "last": index}
-
+            
+            #Check whether the price groups are still valid or not
+            for key, value in price_groups[side].items():
+                # if price is not empty, perform more checks
+                if len(value["prices"]) > 0:
+                    # check whether the current row's high or low is greater than the maximum or minimum price in the group
+                    if side== "resistances" and row[h_l] > max(value["prices"]):
+                        value["prices"].clear()
+                        value["start_time"]= None
+                        value["last"]= None
+                    elif side== "resistances" and row[h_l] > min(value["prices"]):
+                        value["prices"].clear()
+                        value["start_time"]= None
+                        value["last"]= None
+                    
+   
     print(df)
