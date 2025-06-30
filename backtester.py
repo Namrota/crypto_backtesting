@@ -3,6 +3,7 @@ from utils.time_convertor import *
 
 import strategies.obv
 import strategies.ichimoku
+import strategies.support_resistance
 
 def run(exchange:str, symbol:str, strategy:str, tf:str, from_time:int, to_time:int):
     """
@@ -33,3 +34,11 @@ def run(exchange:str, symbol:str, strategy:str, tf:str, from_time:int, to_time:i
         data= resample_timeframe(data, tf)
         #strategies.ichimoku.backtest(data, 9, 26)
         print(strategies.ichimoku.backtest(data, tenkan_period= 9, kijun_period= 26))
+    
+
+    elif strategy== "sup_res":
+        h5_db = Hdf5Client(exchange)
+        data= h5_db.get_data(symbol, from_time=from_time, to_time=to_time)
+        # Resample the data to the specified timeframe
+        data= resample_timeframe(data, tf)
+        print(strategies.support_resistance.backtest(data, min_points= 3, min_diff_points= 9, rounding_nb= 400, take_profit= 3, stop_loss= 3))
