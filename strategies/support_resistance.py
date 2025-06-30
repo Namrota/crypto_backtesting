@@ -24,6 +24,11 @@ def backtest(df: pd.DataFrame, min_points: int, min_diff_points:int, rounding_nb
     """
     # difference in milliseconds between each candle
     candle_length= df.iloc[1].name - df.iloc[0].name
+
+    pnl= 0
+    trade_side= 0
+    entry_price= None
+
     # nearest support/resistance levels
     df["rounded_high"]= round(df["high"]/rounding_nb)*rounding_nb
     df["rounded_low"]= round(df["low"]/rounding_nb)*rounding_nb
@@ -101,11 +106,35 @@ def backtest(df: pd.DataFrame, min_points: int, min_diff_points:int, rounding_nb
             last_h_l[side].append(row[h_l])
             if len(last_h_l[side]) > 10:
                 last_h_l[side].pop(0)
+            
+            #check for new trade
 
+            for sup_res in resistances_supports[side]:
+                # if the close price breaks the resistance or support level
+                entry_condition= row["close"] > sup_res["price"] if side== "resistances" else row["close"] < sup_res["price"]
+
+                if entry_condition and not sup_res["broken"]:
+                    sup_res["broken"]= True
+                    if trade_side == 0:
+                        entry_price= row["close"]
+                        trade_side= 1 if side== "resistances" else -1
+
+            # Check PNL for the trade
+            if trade_side == 1:
+                if row["close"]  >= entry_price * (1 + take_profit / 100) or row["close"] <= entry_price * (1 - stop_loss / 100):
+                    pnl += (row["close"] / entry_price - 1) * 100
+                    trade_side= 0
+                    entry_price= None
+            elif trade_side == -1:
+                if row["close"]  <= entry_price * (1 - take_profit / 100) or row["close"] >= entry_price * (1 + stop_loss / 100):
+                    pnl += (entry_price / row["close"] - 1) * 100
+                    trade_side= 0
+                    entry_price= None
     resistance_lines= levels["resistances"]
     support_lines= levels["supports"]  
     print(f"Found {len(resistance_lines)} resistance levels and {len(support_lines)} support levels")         
-    mpf.plot(df, 
+    
+    '''mpf.plot(df, 
              type='candle', style='charles', 
              alines=dict(alines=resistance_lines + support_lines,
              linewidths= [0.5]* len(resistance_lines + support_lines), 
@@ -113,3 +142,7 @@ def backtest(df: pd.DataFrame, min_points: int, min_diff_points:int, rounding_nb
              ),
              title='Support and Resistance Levels (Green=Resistance, Red=Support)',)
     plt.show()
+    '''
+    return pnl
+
+    
