@@ -77,7 +77,7 @@ if __name__== "__main__":
     
     elif mode== "backtest":
         #strategy
-        available_strategies= ["obv", "ichimoku", "sup_res"]
+        available_strategies= ["obv", "ichimoku", "sup_res", "sup_res_rsi"]
         while True:
             strategy= input(f"Choose a strategy- ({', '.join(available_strategies)}): ").lower()
             if strategy in available_strategies:
@@ -115,4 +115,4 @@ if __name__== "__main__":
             except ValueError:
                 continue
 
-        backtester.run(exchange, symbol, strategy, tf, from_time, to_time)
+        print(backtester.run(exchange, symbol, strategy, tf, from_time, to_time))
