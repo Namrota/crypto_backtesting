@@ -4,6 +4,8 @@ from utils.time_convertor import *
 import strategies.obv
 import strategies.ichimoku
 import strategies.support_resistance
+from utils.params import STRAT_PARAMS
+
 
 def run(exchange:str, symbol:str, strategy:str, tf:str, from_time:int, to_time:int):
     """
@@ -17,6 +19,23 @@ def run(exchange:str, symbol:str, strategy:str, tf:str, from_time:int, to_time:i
         from_time (int): The start time for the backtest in milliseconds.
         to_time (int): The end time for the backtest in milliseconds.
     """
+
+    params_des= STRAT_PARAMS[strategy]
+
+    params= dict()
+    for key, value in params_des.items():
+        while True:
+            try:
+                # Prompt the user for input, using the default value if provided
+                user_input = input(f"{value['name']} (default: {value['default']}): ")
+                # If the user provides no input, use the default value
+                if user_input == "":
+                    params[key] = value["type"](value["default"])
+                else:
+                    params[key] = value["type"](user_input)
+                break
+            except ValueError:
+                print(f"Invalid input for {value['name']}. Please enter a valid {value['type'].__name__} value.")
     
     if strategy == "obv":
         h5_db = Hdf5Client(exchange)
@@ -25,7 +44,8 @@ def run(exchange:str, symbol:str, strategy:str, tf:str, from_time:int, to_time:i
         data= resample_timeframe(data, tf)
    
 
-        print(strategies.obv.backtest(data, 9))
+        pnl, absolute_mdd= strategies.obv.backtest(data, ma_period=params["ma_period"])
+        return pnl, absolute_mdd
     
     elif strategy== "ichimoku":
         h5_db = Hdf5Client(exchange)
@@ -33,7 +53,9 @@ def run(exchange:str, symbol:str, strategy:str, tf:str, from_time:int, to_time:i
         # Resample the data to the specified timeframe
         data= resample_timeframe(data, tf)
         #strategies.ichimoku.backtest(data, 9, 26)
-        print(strategies.ichimoku.backtest(data, tenkan_period= 9, kijun_period= 26))
+        pnl, absolute_mdd= strategies.ichimoku.backtest(data, tenkan_period= params["tenkan_period"], 
+                                          kijun_period= params["kijun_period"])
+        return pnl, absolute_mdd
     
 
     elif strategy== "sup_res":
@@ -41,4 +63,11 @@ def run(exchange:str, symbol:str, strategy:str, tf:str, from_time:int, to_time:i
         data= h5_db.get_data(symbol, from_time=from_time, to_time=to_time)
         # Resample the data to the specified timeframe
         data= resample_timeframe(data, tf)
-        print(strategies.support_resistance.backtest(data, min_points= 3, min_diff_points= 9, rounding_nb= 400, take_profit= 3, stop_loss= 3))
+        pnl, absolute_mdd= strategies.support_resistance.backtest(data, min_points= params["min_points"], 
+                                                     min_diff_points= params["min_diff_points"] , 
+                                                     rounding_nb= params["rounding_nb"], 
+                                                     take_profit= params["take_profit"], 
+                                                     stop_loss= params["stop_loss"])
+        return pnl, absolute_mdd
+    
+   
