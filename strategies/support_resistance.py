@@ -27,6 +27,11 @@ def backtest(df: pd.DataFrame, min_points: int, min_diff_points:int, rounding_nb
     candle_length= df.iloc[1].name - df.iloc[0].name
 
     pnl= 0
+    max_pnl= 0
+    max_drawdown= 0
+    max_drawdown_pct= 0
+    # trade side: 0= no trade, 1= long, -1= short
+    # entry price: the price at which the trade was entered
     trade_side= 0
     entry_price= None
 
@@ -144,7 +149,13 @@ def backtest(df: pd.DataFrame, min_points: int, min_diff_points:int, rounding_nb
                     pnl += (entry_price / row["close"][i] - 1) * 100
                     trade_side= 0
                     entry_price= None
-            
+            max_pnl= max(max_pnl, pnl)
+            # Calculate the maximum drawdown
+            # max_drawdown is the maximum difference between the maximum PnL and the current PnL
+            max_drawdown= max(max_drawdown, max_pnl - pnl) 
+            #calculate the percentage max drawdown 
+            #max_drawdown_pct= max(max_drawdown_pct, ((max_pnl - pnl) / max_pnl * 100))
+    
     resistance_lines= levels["resistances"]
     support_lines= levels["supports"]  
 
@@ -159,6 +170,6 @@ def backtest(df: pd.DataFrame, min_points: int, min_diff_points:int, rounding_nb
              title='Support and Resistance Levels (Green=Resistance, Red=Support)',)
     plt.show()
     '''
-    return pnl  # Total PnL in percentage
+    return pnl, max_drawdown # Total PnL in percentage, max drawdown in absolute value, max drawdown in percentage
 
     

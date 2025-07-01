@@ -64,8 +64,9 @@ def backtest(df: pd.DataFrame, tenkan_period: int, kijun_period: int):
         & (df["close"]> df["senkou_span_a"]) # close price greater than senkou span A
         & (df["close"] > df["senkou_span_b"]) # close price greater than senkou span B
         & (df["close"]> df["chikou_span"]) # close price greater than chikou span
-        & (df["senkou_span_a"] > df["senkou_span_b"]) # senkou span A greater than senkou span B
-        & (df["prev_senkou_span_a"] < df["prev_senkou_span_b"]), 1,  # bullish or long signal
+        #& (df["senkou_span_a"] > df["senkou_span_b"]) # senkou span A greater than senkou span B
+        #& (df["prev_senkou_span_a"] < df["prev_senkou_span_b"])
+        , 1,  # bullish or long signal
 
         np.where(
         (df["tenkan_minus_kijun"] < 0) 
@@ -73,8 +74,9 @@ def backtest(df: pd.DataFrame, tenkan_period: int, kijun_period: int):
         & (df["close"]< df["senkou_span_a"])
         & (df["close"]< df["senkou_span_b"])
         & (df["close"]< df["chikou_span"])
-        & (df["senkou_span_a"] < df["senkou_span_b"])
-        & (df["prev_senkou_span_a"] > df["prev_senkou_span_b"]), -1, 0) # bearish or short signal, otherwise no signal
+        #& (df["senkou_span_a"] < df["senkou_span_b"])
+        #& (df["prev_senkou_span_a"] > df["prev_senkou_span_b"])
+        , -1, 0) # bearish or short signal, otherwise no signal
     )  
 
     # Calculate PnL
@@ -82,5 +84,17 @@ def backtest(df: pd.DataFrame, tenkan_period: int, kijun_period: int):
     signal_data= df[df["signal"] != 0].copy()
     # Calculate the percentage change in close price and shift the signal by 1 to align with the previous signal
     signal_data["pnl"]= signal_data["close"].pct_change() * signal_data["signal"].shift(1)
+
+    #Calculating Maximum Drawdown
+    signal_data["cum_pnl"]= signal_data["pnl"].cumsum()
+    signal_data["max_cum_pnl"]= signal_data["cum_pnl"].cummax()
+    signal_data["drawdown"]= signal_data["max_cum_pnl"] - signal_data["cum_pnl"]
+
+     #Calculating the maximum drwadown in percentage:
+    signal_data["cum_returns"]= (1 + signal_data["pnl"]).cumprod()
+    signal_data["max_cum_returns"]= signal_data["cum_returns"].cummax()
+    signal_data["drawdown_pct"]= (signal_data["cum_returns"] - signal_data["max_cum_returns"]) / signal_data["max_cum_returns"]
+    signal_data["drawdown_pct"]= signal_data["drawdown_pct"].fillna(0) * 100  # Convert to percentage
+
     #return signal_data
-    return signal_data['pnl'].sum() * 100  # Total PnL in percentage
+    return signal_data['pnl'].sum() * 100, signal_data["drawdown"].max() # Total PnL in percentage
