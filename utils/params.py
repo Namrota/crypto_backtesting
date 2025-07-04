@@ -14,4 +14,8 @@ STRAT_PARAMS= {
         "take_profit": {"name": "Take Profit Percentage", "default": 3, "type": float},
         "stop_loss": {"name": "Stop Loss Percentage", "default": 3, "type": float}
     },
+    "sma":{
+        "slow_ma": {"name": "Slow Moving Average", "default": 50, "type": int},
+        "fast_ma": {"name": "Fast Moving Average", "default": 9, "type": int}
+    },
 }
