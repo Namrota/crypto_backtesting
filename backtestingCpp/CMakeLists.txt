@@ -22,10 +22,16 @@ set(SOURCE_FILES
     main.cpp
     Database.cpp
     utils.cpp
+    strategies/Sma.cpp
+    strategies/Psar.cpp
 )
 
 
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+#add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+
+# Create a shared library
+add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
+
 # Include HDF5 headers
 target_include_directories(${PROJECT_NAME} PRIVATE ${HDF5_INCLUDE_DIRS})
 # Link against HDF5 libraries
