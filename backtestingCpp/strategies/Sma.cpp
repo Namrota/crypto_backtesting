@@ -5,6 +5,8 @@
 #include "../utils.h"
 #include <numeric>
 
+#define DLLEXPORT extern "C" __declspec(dllexport) //Windows only
+
 using namespace std;
 
 Sma::Sma(char* exchange_c, char* symbol_c, char* timeframe_c, long long from_time, long long to_time) {
@@ -95,4 +97,19 @@ void Sma::execute_backtest(int slow_ma, int fast_ma) {
     }
 }
 
-  
+
+//Functions callable from Python:
+//Creating an interface between C++ and Python
+
+DLLEXPORT Sma* Sma_new(char* exchange, char* symbol, char* timeframe, long long from_time, long long to_time){
+    return new Sma(exchange, symbol, timeframe, from_time, to_time);
+}
+
+DLLEXPORT void Sma_execute_backtest(Sma* sma, int slow_ma, int fast_ma){
+    return sma->execute_backtest(slow_ma, fast_ma);
+}
+//To get the PnL and Maximum Drawdown, it is not possible in C to return more than one variables
+// Create two functions for PnL and Maximum Drawdown
+
+DLLEXPORT double Sma_get_pnl(Sma* sma){return sma->pnl;}
+DLLEXPORT double Sma_get_mdd(Sma* sma){return sma->max_dd;}
