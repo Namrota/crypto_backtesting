@@ -1,20 +1,20 @@
 #include <iostream>
-#include "Database.h"
-#include "utils.h"
+#include <cstring>
+
+
+#include "strategies/Sma.h"
 
 int main(int, char**){
-    Database db("binance"); 
-    int array_size = 0;
-    double **res= db.get_data("BTCUSDT", "binance", array_size);
-    std::vector<double> ts, open, high, low, close, volume;
-    std::tie(ts, open, high, low, close, volume)= rearrange_candles(res, "15m", array_size); // Example usage of rearrange_candles
-    for(int i = 0; i < 50; i++) {
-        printf("Timestamp: %f, Open: %f, High: %f, Low: %f, Close: %f, Volume: %f\n", 
-               ts[i], open[i], high[i], low[i], close[i], volume[i]);
-    }
-    printf("%i\n", ts.size());        
-    
-    db.close_file();
-    
+    std::string symbol= "BTCUSDT";
+    std::string exchange= "binance";
+    std::string timeframe= "15m";
+
+    char* symbol_char= strcpy((char*)malloc(symbol.length()+1), symbol.c_str());
+    char* exchange_char= strcpy((char*)malloc(exchange.length()+1), exchange.c_str());
+    char* tf_char= strcpy((char*)malloc(timeframe.length()+1), timeframe.c_str());
+
+    Sma sma(exchange_char, symbol_char, tf_char, 0, 1746038400);
+    sma.execute_backtest(50,20);
+    printf("%f | %f\n", sma.pnl, sma.max_dd);
    
 }
