@@ -77,7 +77,7 @@ if __name__== "__main__":
     
     elif mode== "backtest":
         #strategy
-        available_strategies= ["obv", "ichimoku", "sup_res", "sup_res_rsi"]
+        available_strategies= ["obv", "ichimoku", "sup_res", "sma"]
         while True:
             strategy= input(f"Choose a strategy- ({', '.join(available_strategies)}): ").lower()
             if strategy in available_strategies:

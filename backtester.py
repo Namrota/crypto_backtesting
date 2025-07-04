@@ -1,3 +1,5 @@
+
+from ctypes import *
 from database import Hdf5Client
 from utils.time_convertor import *
 
@@ -70,4 +72,25 @@ def run(exchange:str, symbol:str, strategy:str, tf:str, from_time:int, to_time:i
                                                      stop_loss= params["stop_loss"])
         return pnl, absolute_mdd
     
-   
+    elif strategy== "sma":
+        lib= CDLL("backtestingCpp/build/libbacktestingCpp.dll", winmode=0)
+        lib.Sma_new.restype= c_void_p
+        lib.Sma_new.argtypes=[c_char_p, c_char_p, c_char_p, c_longlong, c_longlong ]
+
+        lib.Sma_execute_backtest.restype= c_void_p
+        lib.Sma_execute_backtest.argtypes=[c_void_p, c_int, c_int]
+
+        lib.Sma_get_pnl.restype= c_double
+        lib.Sma_get_pnl.argtypes=[c_void_p]
+
+        lib.Sma_get_mdd.restype= c_double
+        lib.Sma_get_mdd.argtypes=[c_void_p]
+
+        obj= lib.Sma_new(exchange.encode(), symbol.encode(), tf.encode(), from_time, to_time)
+        lib.Sma_execute_backtest(obj, params["slow_ma"], params["fast_ma"])
+
+        pnl= lib.Sma_get_pnl(obj)
+        max_dd= lib.Sma_get_mdd(obj)
+
+
+        return pnl, max_dd
