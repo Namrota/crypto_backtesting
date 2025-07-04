@@ -5,7 +5,8 @@
 using namespace std;
 
 tuple<vector<double>, vector<double>, vector<double>, vector<double>,
-vector<double>, vector<double>> rearrange_candles(double** candles, std:: string tf, int array_size)
+vector<double>, vector<double>> rearrange_candles(double** candles, std:: string tf, 
+    long long from_time, long long to_time, int array_size)
 {
     vector<double> ts, open, high, low, close, volume;
     
@@ -24,15 +25,35 @@ vector<double>, vector<double>> rearrange_candles(double** candles, std:: string
         return make_tuple(ts, open, high, low, close, volume);
     }
 
-    double current_ts= candles[0][0] - fmod(candles[0][0], tf_result); // Convert the first timestamp to milliseconds
-    double current_open = candles[0][1];
-    double current_high = candles[0][2];
-    double current_low = candles[0][3];
-    double current_close = candles[0][4];
-    double current_volume = candles[0][5];
+    double current_ts= 0.0; 
+    double current_open;
+    double current_high;
+    double current_low;
+    double current_close;
+    double current_volume;
 
     // Loop through the candles array and fill the vectors
     for(int i = 0; i < array_size; i++) {
+
+
+        if(candles[i][0] < from_time){
+            continue; 
+        }
+        else if(current_ts == 0.0) {
+            current_ts= candles[i][0] - fmod(candles[0][0], tf_result); // Convert the first timestamp to milliseconds
+            current_open = candles[i][1];
+            current_high = candles[i][2];
+            current_low = candles[i][3];
+            current_close = candles[i][4];
+            current_volume = candles[i][5];
+            
+        }
+        if(candles[i][0] > to_time){
+            break; // Stop processing if the candle timestamp exceeds the to_time
+        }
+
+        
+
         if(candles[i][0] >= current_ts + tf_result) {
             // If the current timestamp exceeds the current timestamp plus the time frame, save the current candle
             ts.push_back(current_ts);
