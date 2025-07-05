@@ -40,7 +40,7 @@ vector<double>, vector<double>> rearrange_candles(double** candles, std:: string
             continue; 
         }
         else if(current_ts == 0.0) {
-            current_ts= candles[i][0] - fmod(candles[0][0], tf_result); // Convert the first timestamp to milliseconds
+            current_ts= candles[i][0] - fmod(candles[i][0], tf_result); // Convert the first timestamp to milliseconds
             current_open = candles[i][1];
             current_high = candles[i][2];
             current_low = candles[i][3];
