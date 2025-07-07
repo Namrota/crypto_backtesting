@@ -60,7 +60,7 @@ if __name__== "__main__":
             
             
 
-    if exchange== "binance":
+    if exchange in ["binance", "optimize"]:
         client= BinanceClient()
         #print(client.get_historical_data("BTCUSDT"))
     elif exchange== "coinbase":
@@ -114,5 +114,24 @@ if __name__== "__main__":
                 break
             except ValueError:
                 continue
+    
+        if mode == "backtest":
+            print(backtester.run(exchange, symbol, strategy, tf, from_time, to_time))
+        elif mode== "optimize":
+            #Population Size
+            while True:
+                try:
+                    pop_size= int(input(f"Choose a Population Size:"))
+                    break
+                except ValueError:
+                    continue
+            
 
-        print(backtester.run(exchange, symbol, strategy, tf, from_time, to_time))
+             #Iterations: One generation of the population corresponds to one iteration
+            while True:
+                try:
+                    generations= int(input(f"Choose a number of generations:"))
+                    break
+                except ValueError:
+                    continue
+
