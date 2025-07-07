@@ -24,6 +24,7 @@ import logging
 
 import backtester
 import datetime
+import optimizer
 
 from utils.time_convertor import *
 from exchanges.binance import BinanceClient
@@ -60,7 +61,7 @@ if __name__== "__main__":
             
             
 
-    if exchange in ["binance", "optimize"]:
+    if exchange in ["binance", "coinbase"]:
         client= BinanceClient()
         #print(client.get_historical_data("BTCUSDT"))
     elif exchange== "coinbase":
@@ -75,7 +76,7 @@ if __name__== "__main__":
     if mode== "data":
         collect_all(client, exchange, symbol)
     
-    elif mode== "backtest":
+    elif mode in ["backtest", "optimize"]:
         #strategy
         available_strategies= ["obv", "ichimoku", "sup_res", "sma"]
         while True:
@@ -117,6 +118,7 @@ if __name__== "__main__":
     
         if mode == "backtest":
             print(backtester.run(exchange, symbol, strategy, tf, from_time, to_time))
+
         elif mode== "optimize":
             #Population Size
             while True:
@@ -134,4 +136,14 @@ if __name__== "__main__":
                     break
                 except ValueError:
                     continue
+            
 
+            nsga2= optimizer.Nsga2(exchange= exchange, symbol= symbol,
+                                   strategy= strategy, tf= tf,
+                                   from_time= from_time, to_time= to_time,
+                                   population_size= pop_size)
+
+            current_population= nsga2.create_initial_population()
+
+            for individual in current_population:
+                print(individual)
