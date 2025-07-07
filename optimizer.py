@@ -5,6 +5,9 @@ from models import BacktestResult
 import random
 import typing
 
+import strategies.obv
+import strategies.ichimoku
+import strategies.support_resistance
 
 class Nsga2:
     def __init__(self, exchange:str, 
@@ -61,4 +64,39 @@ class Nsga2:
 
         return population 
 
+    '''Evaluate the Population: PnL and Maximum Drawdown values will be filled in the updated List'''
+    def evaluate_population(self, population: typing.List[BacktestResult])-> typing.List[BacktestResult]:
+        if self.strategy == "obv":
+            for bt in population:
+                bt.pnl, bt.max_dd= strategies.obv.backtest(self.data, ma_period=bt.parameters["ma_period"])
+            return population
+    
+        elif self.strategy== "ichimoku":
+            for bt in population:
+                bt.pnl, bt.max_dd= strategies.ichimoku.backtest(self.data, tenkan_period= bt.parameters["tenkan_period"], 
+                                            kijun_period= bt.parameters["kijun_period"])
+            return population
         
+
+        elif self.strategy== "sup_res":
+            for bt in population:
+                bt.pnl, bt.max_dd= strategies.support_resistance.backtest(self.data, min_points= bt.parameters["min_points"], 
+                                                        min_diff_points= bt.parameters["min_diff_points"] , 
+                                                        rounding_nb= bt.parameters["rounding_nb"], 
+                                                        take_profit= bt.parameters["take_profit"], 
+                                                        stop_loss= bt.parameters["stop_loss"])
+            return population
+        
+        elif self.strategy== "sma":
+            for bt in population:
+                self.lib.Sma_execute_backtest(self.obj, bt.parameters["slow_ma"], bt.parameters["fast_ma"])
+                bt.pnl= self.lib.Sma_get_pnl(self.obj)
+                bt.max_dd= self.lib.Sma_get_mdd(self.obj)
+
+
+            return population
+        
+
+    
+
+

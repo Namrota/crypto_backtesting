@@ -144,6 +144,6 @@ if __name__== "__main__":
                                    population_size= pop_size)
 
             current_population= nsga2.create_initial_population()
-
+            evaluated_population= nsga2.evaluate_population(current_population)
             for individual in current_population:
                 print(individual)
