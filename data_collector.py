@@ -1,4 +1,4 @@
-from typing import *
+import typing
 from utils.time_convertor import *
 import time
 import logging
@@ -10,7 +10,7 @@ from exchanges.coinbase import CoinbaseClient
 
 logger = logging.getLogger()
 
-def collect_all(client: Union[BinanceClient, CoinbaseClient], exchange: str, symbol: str) -> None:
+def collect_all(client: typing.Union[BinanceClient, CoinbaseClient], exchange: str, symbol: str) -> None:
     # This function collects historical data for a given trading symbol from the specified exchange.
     h5_db= Hdf5Client(exchange)
     h5_db.create_dataset(symbol)  # Create a dataset for the symbol if it doesn't exist
