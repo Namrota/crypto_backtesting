@@ -145,6 +145,7 @@ if __name__== "__main__":
 
             current_population= nsga2.create_initial_population()
             evaluated_population= nsga2.evaluate_population(current_population)
+            evaluated_population= nsga2.crowding_distance(evaluated_population)
 
             # identifier i for each individual:
             i= 0

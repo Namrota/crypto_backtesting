@@ -191,5 +191,20 @@ class Nsga2:
         
 
     
+    def crowding_distance(self, population: typing.List[BacktestResult]) -> typing.List[BacktestResult]:
+        for objective in ["pnl", "max_dd"]:
+            population= sorted(population, key= lambda x: getattr(x, objective))
+            min_value= getattr(min(population, key= lambda x: getattr(x, objective)), objective)
+            max_value= getattr(max(population, key= lambda x: getattr(x, objective)), objective)
 
+            population[0].crowding_distance= float("inf")
+            population[-1].crowding_distance= float("inf")
+
+            for i in range(1, len(population) - 1):
+                distance= getattr(population[i+1], objective) - getattr(population[i-1], objective)
+                distance= distance / (max_value - min_value)
+                population[i].crowding_distance += distance
+
+        
+        return population
 
