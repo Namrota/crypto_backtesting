@@ -145,5 +145,19 @@ if __name__== "__main__":
 
             current_population= nsga2.create_initial_population()
             evaluated_population= nsga2.evaluate_population(current_population)
-            for individual in current_population:
-                print(individual)
+
+            # identifier i for each individual:
+            i= 0
+            population= dict()
+
+            # Store the population in dictionary with the identifier as its key
+            for bt in evaluated_population:
+                population[i]= bt
+                i+= 1
+                
+            fronts= nsga2.non_dominated_sorting(population)
+
+            #for individual in current_population:
+            #    print(individual)
+            for front in fronts:
+                print(front)

@@ -42,7 +42,26 @@ class Nsga2:
 
 
         
-    '''Creating initial population for NSGA 2 algorithm called P0'''
+    '''
+    Creating initial population for NSGA 2 algorithm called P0
+    
+    
+    Generate population_size individuals (BacktestResult objects) randomly:
+
+    Loop until you have enough.
+
+    For each hyperparameter in self.params_data:
+
+    Draw an integer or float in its allowed range.
+
+    Store it in backtest.parameters.
+
+    Uniqueness check:
+    if backtest not in population: ensures no two identical parameter sets.
+    
+    
+    
+    '''
 
     def create_initial_population(self)-> typing.List[BacktestResult]:
         population=[]
@@ -63,8 +82,82 @@ class Nsga2:
                 population.append(backtest)
 
         return population 
+    
+    '''
 
-    '''Evaluate the Population: PnL and Maximum Drawdown values will be filled in the updated List'''
+    Non-dominated sorting to find the Fronts with different ranking in order to get the Pareto Front:
+
+    fronts will become a list of “fronts,” where
+
+        fronts[0] is the first (best) Pareto front,
+
+        fronts[1] the second, and so on.
+    
+    After the loops, for each individual you know:
+
+        dominated_by — how many others dominate it.
+
+        dominates — list of IDs it beats.
+
+    Returns a list of Fronts which in turn contains a list of individuals
+
+    '''
+    
+    def non_dominated_sorting(self, population: typing.Dict[int, BacktestResult])-> typing.List[typing.List[BacktestResult]]:
+        fronts=[]
+        # Comparing one individual with the other individual in a loop 
+        # Collecting all the IDs of the individual that dominates the other individual
+        for id_1, indiv_1 in population.items():
+            for id_2, indiv_2 in population.items():
+                # The below condition means that individual 1 cannot perform worse than individual 2:
+                # The individual 1 should have atleast one advantage over the individual 2:
+                if indiv_1.pnl >= indiv_2.pnl and indiv_1.max_dd<= indiv_2.max_dd \
+                    and(indiv_1.pnl > indiv_2.pnl or indiv_1.max_dd < indiv_2.max_dd):
+                    indiv_1.dominates.append(id_2)
+                # Checking the condition for if individual 2 has an advantage over individual 1
+                elif indiv_2.pnl >= indiv_1.pnl and indiv_2.max_dd<= indiv_1.max_dd \
+                    and(indiv_2.pnl > indiv_1.pnl or indiv_2.max_dd < indiv_1.max_dd):
+                    indiv_1.dominated_by += 1
+
+            if indiv_1.dominated_by == 0:
+                if len(fronts) == 0:
+                    fronts.append([])
+                fronts[0].append(indiv_1)
+                indiv_1.rank= 0  # The individual belongs to Front 1
+            
+        i= 0
+
+        while True:
+            # Get the other fronts
+            fronts.append([])
+
+            for indiv_1 in fronts[i]:
+                for indiv_2_id in indiv_1.dominates:
+                    population[indiv_2_id].dominated_by -= 1
+                    if population[indiv_2_id].dominated_by == 0:
+                        fronts[i + 1].append(population[indiv_2_id])
+                        population[indiv_2_id].rank = i + 1
+
+
+            if len(fronts[i + 1]) > 0:
+                i+= 1
+            else:
+                del fronts[-1]
+                break
+        return fronts
+
+    '''
+    Evaluate the Population: PnL and Maximum Drawdown values will be filled in the updated List
+
+    For each individual:
+
+    Call the appropriate backtest function (Python or C).
+
+    Unpack the returned PnL and max-drawdown into the BacktestResult fields.
+
+    Return the list, now with every individual carrying its (pnl, max_dd) pair.
+    
+    '''
     def evaluate_population(self, population: typing.List[BacktestResult])-> typing.List[BacktestResult]:
         if self.strategy == "obv":
             for bt in population:
