@@ -123,7 +123,7 @@ if __name__== "__main__":
             #Population Size
             while True:
                 try:
-                    pop_size= int(input(f"Choose a Population Size:"))
+                    pop_size= int(input(f"Choose a Population Size: "))
                     break
                 except ValueError:
                     continue
@@ -132,7 +132,7 @@ if __name__== "__main__":
              #Iterations: One generation of the population corresponds to one iteration
             while True:
                 try:
-                    generations= int(input(f"Choose a number of generations:"))
+                    generations= int(input(f"Choose a number of generations: "))
                     break
                 except ValueError:
                     continue
@@ -143,25 +143,59 @@ if __name__== "__main__":
                                    from_time= from_time, to_time= to_time,
                                    population_size= pop_size)
 
-            current_population= nsga2.create_initial_population()
-            evaluated_population= nsga2.evaluate_population(current_population)
-            evaluated_population= nsga2.crowding_distance(evaluated_population)
+            p_population= nsga2.create_initial_population()
+            p_population= nsga2.evaluate_population(p_population)
+            # we only wnat to proceed with the data having trades that is PNL !=0:
+            all_individuals= p_population.copy()
+            real_trades=[i for i in all_individuals if i.pnl != 0]
+            no_trade_individuals= [i for i in all_individuals if i.pnl == 0]
 
-            #offspring population:
-            current_population += nsga2.create_offspring_population(current_population)
+            p_population= real_trades
+            p_population= nsga2.crowding_distance(p_population)
 
-            # identifier i for each individual:
-            i= 0
-            population= dict()
+            # Counter to calculate the number of generations:
+            g= 0
+            while g < generations:
+                #offspring population:
+                q_population = nsga2.create_offspring_population(p_population)
+                q_population = nsga2.evaluate_population(q_population)
 
-            # Store the population in dictionary with the identifier as its key
-            for bt in evaluated_population:
-                population[i]= bt
-                i+= 1
+                # we only wnat to proceed with the data having trades that is PNL !=0:
+                all_individuals= q_population.copy()
+                real_trades=[i for i in all_individuals if i.pnl != 0]
+                no_trade_individuals= [i for i in all_individuals if i.pnl == 0]
+
+                q_population= real_trades
+
+                r_population= q_population + p_population
+
+                nsga2.population_params.clear()
+
+
+                # identifier i for each individual:
+                i= 0
+                population= dict()
+
+                # Store the population in dictionary with the identifier as its key
+                for bt in r_population:
+                    bt.reset_results()
+                    nsga2.population_params.append(bt.parameters)
+                    population[i]= bt
+                    i+= 1
+                    
+                fronts= nsga2.non_dominated_sorting(population)
+                # Crowding distance of each Front:
+                for j in range(len(fronts)):
+                    fronts[j]= nsga2.crowding_distance(fronts[j])
                 
-            fronts= nsga2.non_dominated_sorting(population)
+                p_population= nsga2.create_new_population(fronts)
 
-            for individual in current_population:
+                print(f"{int((g + 1) / generations * 100)}%", end= ' ')
+                g+=1
+            
+            print("\n")
+
+            for individual in p_population:
                 print(individual)
-            #for front in fronts:
-            #    print(front)
+                #for front in fronts:
+                #    print(front)
