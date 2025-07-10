@@ -22,8 +22,6 @@ class BacktestResult:
     # Resetting all the variables to their initial state, since these variables wil get updated
     # generation after generation, or iteration apart from the params of the backtest
     def reset_results(self):
-        self.pnl= 0.0
-        self.max_dd= 0.0
         self.dominated_by= 0 
         self.dominates.clear()
         self.rank= 0
