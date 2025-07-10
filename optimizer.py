@@ -290,17 +290,12 @@ class Nsga2:
     '''
 
     def _params_constraints(self, params: typing.Dict) -> typing.Dict:
-        if self.strategy == "obv":
-            pass
+        if self.strategy == "obv": pass
 
-        elif self.strategy == "sup_res":
-            pass
+        elif self.strategy == "sup_res": pass
 
-        elif self.strategy == "ichimoku":
-            if params["kijun_period"] <= params["tenkan_period"]: 
-                params["kijun_period"]= params["tenkan_period"] + 1
+        elif self.strategy == "ichimoku": params["kijun_period"]= max(params["tenkan_period"], params["kijun_period"])
 
-        elif self.strategy == "sma": 
-            params["slow_ma"] = max(params["slow_ma"], params["fast_ma"])
+        elif self.strategy == "sma": params["slow_ma"] = max(params["slow_ma"], params["fast_ma"])
 
         return params
