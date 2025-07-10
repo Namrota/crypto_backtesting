@@ -147,6 +147,9 @@ if __name__== "__main__":
             evaluated_population= nsga2.evaluate_population(current_population)
             evaluated_population= nsga2.crowding_distance(evaluated_population)
 
+            #offspring population:
+            current_population += nsga2.create_offspring_population(current_population)
+
             # identifier i for each individual:
             i= 0
             population= dict()
@@ -158,7 +161,7 @@ if __name__== "__main__":
                 
             fronts= nsga2.non_dominated_sorting(population)
 
-            #for individual in current_population:
-            #    print(individual)
-            for front in fronts:
-                print(front)
+            for individual in current_population:
+                print(individual)
+            #for front in fronts:
+            #    print(front)

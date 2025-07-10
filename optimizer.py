@@ -8,6 +8,7 @@ import typing
 import strategies.obv
 import strategies.ichimoku
 import strategies.support_resistance
+import copy
 
 class Nsga2:
     def __init__(self, exchange:str, 
@@ -24,6 +25,9 @@ class Nsga2:
         self.population_size= population_size
 
         self.params_data= STRAT_PARAMS[strategy]
+
+        self.population_params= []
+
 
         if self.strategy in ["obv", "ichimoku", "sup_res"]:
             h5_db = Hdf5Client(exchange)
@@ -80,9 +84,80 @@ class Nsga2:
             
             if backtest not in population:
                 population.append(backtest)
+                self.population_params.append(backtest.parameters)
 
         return population 
     
+
+    '''
+    Generating new Population Qt
+    '''
+    def create_offspring_population(self, population: typing.List[BacktestResult]) -> typing.List[BacktestResult]:
+
+        offspring_pop= []
+
+        while len(offspring_pop) != self.population_size:
+            parents: typing.List[BacktestResult]= []
+
+            for i in range(2):
+                #select two random parents:
+                random_parents= random.sample(population, k=2)
+                if random_parents[0].rank != random_parents[1].rank:
+                    # best parent would be the one with the min rank
+                    best_parent= min(random_parents, key= lambda x: getattr(x, "rank"))
+                else:
+                    best_parent= max(random_parents, key= lambda x: getattr(x, "crowding_distance"))
+                
+                parents.append(best_parent)
+
+            new_child= BacktestResult()
+            new_child.parameters= copy.copy(parents[0].parameters)
+
+            #Crossover
+
+            number_of_crossovers= random.randint(1, len(self.params_data))
+            params_to_cross= random.sample(list(self.params_data.keys()), k= number_of_crossovers)
+
+            for p in params_to_cross:
+
+                new_child.parameters[p]= copy.copy(parents[1].parameters[p])
+            
+            #Mutation
+
+            number_of_mutations= random.randint(1, len(self.params_data))
+            params_to_change= random.sample(list(self.params_data.keys()), k= number_of_mutations)
+
+            for p in params_to_change:
+                mutations_strength= random.uniform(-2,2)
+                new_child.parameters[p]= self.params_data[p]["type"](new_child.parameters[p] * (1 + mutations_strength))
+                new_child.parameters[p]= max(new_child.parameters[p], self.params_data[p]["min"])
+                new_child.parameters[p]= min(new_child.parameters[p], self.params_data[p]["max"])
+
+                if self.params_data[p]["type"]== float:
+                    new_child.parameters[p]= round(new_child.parameters[p], self.params_data[p]["decimals"])
+
+            new_child.parameters= self._params_constraints(new_child.parameters)
+
+            if new_child.parameters not in self.population_params:
+                offspring_pop.append(new_child)
+                self.population_params.append(new_child.parameters)
+            
+        return offspring_pop
+
+    def create_new_population(self, fronts: typing.List[typing.List[BacktestResult]]) -> typing.List[BacktestResult]:
+        new_pop=[]
+
+        for front in fronts:
+            if len(new_pop) + len(front) > self.population_size:
+                max_individuals= self.population_size - len(new_pop)
+                if max_individuals > 0:
+                    new_pop += sorted(front, key= lambda x: getattr(x, "crowding_distance"))[-max_individuals:]
+
+            else:
+                new_pop += front
+
+        return new_pop
+
     '''
 
     Non-dominated sorting to find the Fronts with different ranking in order to get the Pareto Front:
@@ -208,3 +283,24 @@ class Nsga2:
         
         return population
 
+
+    '''
+    Params Constraints for different strategies that needs to be considered:
+    
+    '''
+
+    def _params_constraints(self, params: typing.Dict) -> typing.Dict:
+        if self.strategy == "obv":
+            pass
+
+        elif self.strategy == "sup_res":
+            pass
+
+        elif self.strategy == "ichimoku":
+            if params["kijun_period"] <= params["tenkan_period"]: 
+                params["kijun_period"]= params["tenkan_period"] + 1
+
+        elif self.strategy == "sma": 
+            params["slow_ma"] = max(params["slow_ma"], params["fast_ma"])
+
+        return params
