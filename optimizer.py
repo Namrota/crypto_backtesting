@@ -82,6 +82,9 @@ class Nsga2:
                 elif p["type"] == float:
                     backtest.parameters[p_code]= round(random.uniform(p["min"], p["max"]), p["decimals"])
             
+            # enforce the parameter constraints:
+            backtest.parameters= self._params_constraints(backtest.parameters)
+            
             if backtest not in population:
                 population.append(backtest)
                 self.population_params.append(backtest.parameters)
@@ -265,12 +268,21 @@ class Nsga2:
         if self.strategy == "obv":
             for bt in population:
                 bt.pnl, bt.max_dd= strategies.obv.backtest(self.data, ma_period=bt.parameters["ma_period"])
+
+                #if bt.pnl == 0:
+                #    bt.pnl= -float("inf")
+                #    bt.max_dd= float("inf")
+
             return population
     
         elif self.strategy== "ichimoku":
             for bt in population:
                 bt.pnl, bt.max_dd= strategies.ichimoku.backtest(self.data, tenkan_period= bt.parameters["tenkan_period"], 
                                             kijun_period= bt.parameters["kijun_period"])
+                
+                #if bt.pnl == 0:
+                #    bt.pnl= -float("inf")
+                #    bt.max_dd= float("inf")
             return population
         
 
@@ -281,6 +293,10 @@ class Nsga2:
                                                         rounding_nb= bt.parameters["rounding_nb"], 
                                                         take_profit= bt.parameters["take_profit"], 
                                                         stop_loss= bt.parameters["stop_loss"])
+                #if bt.pnl == 0:
+                #    bt.pnl= -float("inf")
+                #    bt.max_dd= float("inf")
+
             return population
         
         elif self.strategy== "sma":
@@ -289,7 +305,9 @@ class Nsga2:
                 bt.pnl= self.lib.Sma_get_pnl(self.obj)
                 bt.max_dd= self.lib.Sma_get_mdd(self.obj)
 
-
+                #if bt.pnl == 0:
+                #    bt.pnl= -float("inf")
+                #    bt.max_dd= float("inf")
             return population
         
 
