@@ -159,7 +159,7 @@ def backtest(df: pd.DataFrame, min_points: int, min_diff_points:int, rounding_nb
     resistance_lines= levels["resistances"]
     support_lines= levels["supports"]  
 
-    print(f"Found {len(resistance_lines)} resistance levels and {len(support_lines)} support levels")         
+    #print(f"Found {len(resistance_lines)} resistance levels and {len(support_lines)} support levels")         
     
     '''mpf.plot(df, 
              type='candle', style='charles', 
