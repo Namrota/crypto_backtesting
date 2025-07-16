@@ -1,3 +1,4 @@
+import strategies.sma_crossover
 from utils.params import *
 from database import Hdf5Client
 from utils.time_convertor import *
@@ -28,20 +29,20 @@ class Nsga2:
 
         self.population_params= []
 
-
-        if self.strategy in ["obv", "ichimoku", "sup_res"]:
+        # 16.07.25: adding sma startegy since it is now written in Python
+        if self.strategy in ["obv", "ichimoku", "sup_res", "sma"]:
             h5_db = Hdf5Client(exchange)
             # data variable will be an instance variable because it wil be used in other methods
             self.data= h5_db.get_data(symbol, from_time=from_time, to_time=to_time)
             # Resample the data to the specified timeframe
             self.data= resample_timeframe(self.data, tf)
         
-        elif self.strategy in ["sma"]:
+        #elif self.strategy in ["sma"]:
 
-            self.lib= get_library()
+        #    self.lib= get_library()
 
-            if self.strategy == "sma":
-                self.obj= self.lib.Sma_new(exchange.encode(), symbol.encode(), tf.encode(), from_time, to_time)
+        #    if self.strategy == "sma":
+        #        self.obj= self.lib.Sma_new(exchange.encode(), symbol.encode(), tf.encode(), from_time, to_time)
             
 
 
@@ -300,10 +301,14 @@ class Nsga2:
             return population
         
         elif self.strategy== "sma":
+           
             for bt in population:
-                self.lib.Sma_execute_backtest(self.obj, bt.parameters["slow_ma"], bt.parameters["fast_ma"])
-                bt.pnl= self.lib.Sma_get_pnl(self.obj)
-                bt.max_dd= self.lib.Sma_get_mdd(self.obj)
+                #self.lib.Sma_execute_backtest(self.obj, bt.parameters["slow_ma"], bt.parameters["fast_ma"])
+                bt.pnl, bt.max_dd= strategies.sma_crossover.backtest(self.data, 
+                                                                      slow_ma= bt.parameters["slow_ma"], 
+                                                                      fast_ma= bt.parameters["fast_ma"])
+                #bt.pnl= self.lib.Sma_get_pnl(self.obj)
+                #bt.max_dd= self.lib.Sma_get_mdd(self.obj)
 
                 #if bt.pnl == 0:
                 #    bt.pnl= -float("inf")
