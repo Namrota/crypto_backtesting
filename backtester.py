@@ -6,6 +6,7 @@ from utils.time_convertor import *
 import strategies.obv
 import strategies.ichimoku
 import strategies.support_resistance
+import strategies.sma_crossover
 from utils.params import *
 
 
@@ -73,15 +74,17 @@ def run(exchange:str, symbol:str, strategy:str, tf:str, from_time:int, to_time:i
         return pnl, absolute_mdd
     
     elif strategy== "sma":
-        lib= get_library()
+        #lib= get_library()
 
-        obj= lib.Sma_new(exchange.encode(), symbol.encode(), tf.encode(), from_time, to_time)
-        lib.Sma_execute_backtest(obj, params["slow_ma"], params["fast_ma"])
+        #obj= lib.Sma_new(exchange.encode(), symbol.encode(), tf.encode(), from_time, to_time)
+        #lib.Sma_execute_backtest(obj, params["slow_ma"], params["fast_ma"])
 
-        pnl= lib.Sma_get_pnl(obj)
-        max_dd= lib.Sma_get_mdd(obj)
-
-
+        #pnl= lib.Sma_get_pnl(obj)
+        #max_dd= lib.Sma_get_mdd(obj)
+        h5_db = Hdf5Client(exchange)
+        data= h5_db.get_data(symbol, from_time=from_time, to_time=to_time)
+        data= resample_timeframe(data, tf)
+        pnl, max_dd= strategies.sma_crossover.backtest(data, slow_ma= params["slow_ma"], fast_ma= params["fast_ma"])
         return pnl, max_dd
     
 
