@@ -5,7 +5,7 @@ pd.set_option("display.max_columns", None)
 pd.set_option("display.max_rows", None)
 pd.set_option("display.width", 1000)
 
-def backtest(df: pd.DataFrame, tenkan_period: int, kijun_period: int):
+def backtest(df_original: pd.DataFrame, tenkan_period: int, kijun_period: int):
     """
     Backtest the Ichimoku strategy on the provided DataFrame.
 
@@ -19,6 +19,7 @@ def backtest(df: pd.DataFrame, tenkan_period: int, kijun_period: int):
     Returns:
         float: Total profit and loss from the strategy.
     """
+    df= df_original.copy()
     # Calculate Ichimoku components
     # Conversion Line: Tenkan Sen
     df["rolling_min_tenkan"]= df['low'].rolling(window=tenkan_period).min()
